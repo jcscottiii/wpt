@@ -1227,7 +1227,12 @@ def run(config_cls=ConfigBuilder, route_builder=None, mp_context=None, log_handl
                     logger.info('Status of subprocess "%s": running', subproc.name)
                     server.stop(timeout=1)
 
-                if server.proc.exitcode == 0:
+                if server.proc.exitcode == None:
+                    logger.warning('Status of subprocess "%s": is alive: "%r". Process did not exit before timeout',
+                        subproc.name,
+                        subproc.is_alive())
+                    failed_subproc += 1
+                elif server.proc.exitcode == 0:
                     logger.info('Status of subprocess "%s": exited correctly', subproc.name)
                 else:
                     logger.warning('Status of subprocess "%s": failed. Exit with non-zero status: %d',
