@@ -20,7 +20,24 @@ jobs:
       if: github.repository == 'web-platform-tests/wpt'
       run: |
         python wpt make-hosts-file | sudo tee -a /etc/hosts
-        python wpt regen-certs --force
+        # Add retry logic until we find out why it does not work the first time
+        # https://github.com/web-platform-tests/wpt/issues/34484
+        n=1
+        until [ "$n" -gt 5 ]
+        do
+            echo "Try ${n}. Sleeping for ${sleep_amount} seconds."
+            sleep 5
+            python wpt regen-certs --force && break
+            # Undo any certs that were created. Want a clean run.
+            git restore . && git status
+            n=$((n+1))
+        done
+
+
+        if [ "$n" -gt 5 ]; then
+            echo "Failed to run command after 5 tries."
+            exit 1
+        fi
     - name: Commit and create pull request
       # Use a conditional step instead of a conditional job to work around #20700.
       if: github.repository == 'web-platform-tests/wpt'
